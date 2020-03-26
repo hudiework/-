@@ -1,0 +1,295 @@
+3.23-3.27一周任务
+
+2.23下午： 熟悉机顶盒，看看能不能将usb调试有没有问题，（如果不行再尝试Log）运行原有的机顶盒Demo 桌面应用示例以及对比示例 学习桌面应用配置，将其关键代码和配置代码捋清楚 
+这是Manifest
+     <activity><intent-filter>  
+               <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+PackageIntentReceiver extends BroadcastReceiver帮助更新加载的类
+AppsLoader
+
+ public ArrayList<AppModel> loadInBackground() {
+        // retrieve the list of installed applications
+        List<ApplicationInfo> apps = mPm.getInstalledApplications(0);
+
+        if (apps == null) {
+            apps = new ArrayList<ApplicationInfo>();
+        }
+
+        final Context context = getContext();
+
+        // create corresponding apps and load their labels
+        ArrayList<AppModel> items = new ArrayList<AppModel>(apps.size());
+        for (int i = 0; i < apps.size(); i++) {
+            String pkg = apps.get(i).packageName;
+
+            // only apps which are launchable
+            if (context.getPackageManager().getLaunchIntentForPackage(pkg) != null) {
+                AppModel app = new AppModel(context, apps.get(i));
+                app.loadLabel(context);
+                items.add(app);
+            }
+        }
+
+        // sort the list
+        Collections.sort(items, ALPHA_COMPARATOR);
+
+        return items;
+
+AppGridFragment
+  @Override
+    public void onLoadFinished(Loader<ArrayList<AppModel>> loader, ArrayList<AppModel> apps) {
+        mAdapter.setData(apps);
+
+        if (isResumed()) {
+            setGridShown(true);
+        } else {
+            setGridShownNoAnimation(true);
+        }
+    }
+
+但是如何让返回以及让配置文件和代码产生什么样的关联关系还没看懂，但是现在使用的AppManager，不清楚怎么产生联系的  simplelaucher
+
+2.24摘取隐藏的系统导航栏代码，httpdSDK，RSA的代码，熟悉关键点配置信息
+开机调用广播类自启动（暂时没看见调用？？）
+权限
+BootReceiver extends BroadcastReceiver
+WakeReceiver extends BroadcastReceiver 
+
+ @Override
+    public void onReceive(Context context, Intent intent) {
+        if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)){
+            Log.e("开机自启动","startSplash");
+            Intent intentNew= new Intent(context, SplashActivity.class);
+            intentNew.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intentNew);
+        }
+    }
+系统导航栏代码：
+baseActivity中的NavigationBarStatusBar(this,true);
+    /**
+     * 导航栏，状态栏隐藏
+     * @param activity
+     */
+    @SuppressLint("ObsoleteSdkInt")
+    public static void NavigationBarStatusBar(Activity activity, boolean hasFocus){
+        if (hasFocus && Build.VERSION.SDK_INT >= 19) {
+            View decorView = activity.getWindow().getDecorView();
+            decorView.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        }
+    }
+okhttp调用
+ okHttpClientBuilder = new OkHttpClient.Builder()
+                .sslSocketFactory(sslContext.getSocketFactory())
+                .hostnameVerifier(DO_NOT_VERIFY)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(30, TimeUnit.SECONDS);
+        testokHttpClientBuilder = new OkHttpClient.Builder()
+                .sslSocketFactory(sslContext.getSocketFactory())
+                .hostnameVerifier(DO_NOT_VERIFY)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(5, TimeUnit.SECONDS);
+        initOkGo();
+LOG
+ httpLoggingInterceptor.setPrintLevel(HttpLoggingInterceptor.Level.BODY);
+        //log显示颜色级别
+        httpLoggingInterceptor.setColorLevel(Level.WARNING);
+XLog可以生成日志文件到指定文件
+
+卡片式编程
+HorizontalRecyclerViewAdapter这是配套的适配器，改UI的位置
+Mainactivity —>ViewPagerActivity主界面
+RootUtils
+帮助实现adb shell的类
+Utils
+获取ip和mac
+StatusBarUtil
+状态栏（隐藏android上方的信息）
+  // 设置状态栏透明
+    ViewsApiCompat.setTranslucentStatusBar(getWindow(), -1);
+  private void initStatusBar() {
+    if (statusBarView == null) {
+      //android系统级的资源id得这么拿,不然拿不到
+      int identifier = getResources().getIdentifier("statusBarBackground", "id", "android");
+      statusBarView = getWindow().findViewById(identifier);
+    }
+    if (statusBarView != null) {
+      statusBarView.setBackgroundResource(R.drawable.appbar_color);
+    }
+  }
+}
+未找到RSA  看见SSL？？？
+ //获取这个SSLSocketFactory
+  private SSLSocketFactory getSSLSocketFactory() {
+    try {
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(null, getTrustManager(), new SecureRandom());
+      return sslContext.getSocketFactory();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  //获取TrustManager
+  private TrustManager[] getTrustManager() {
+    return new TrustManager[] {
+      new X509TrustManager() {
+        @SuppressLint("TrustAllX509TrustManager")
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType) {
+        }
+
+        @SuppressLint("TrustAllX509TrustManager")
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) {
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+          return new X509Certificate[0];
+        }
+      }
+    };
+  }
+ //获取这个SSLSocketFactory
+  private SSLSocketFactory getSSLSocketFactory() {
+    try {
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(null, getTrustManager(), new SecureRandom());
+      return sslContext.getSocketFactory();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  //获取TrustManager
+  private TrustManager[] getTrustManager() {
+    return new TrustManager[] {
+      new X509TrustManager() {
+        @SuppressLint("TrustAllX509TrustManager")
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType) {
+        }
+
+        @SuppressLint("TrustAllX509TrustManager")
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) {
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+          return new X509Certificate[0];
+        }
+      }
+    };
+  }
+  private X509TrustManager xtm = new X509TrustManager() {
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType) {
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) {
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            X509Certificate[] x509Certificates = new X509Certificate[0];
+            return x509Certificates;
+        }
+    };
+Httpd：
+WebServer extends NanoHTTPD 
+ public static void startServer() {
+    if (sInstance == null) {
+      sInstance = new WebServer();
+    }
+
+    try {
+      // 启动web服务
+      if (!sInstance.isAlive()) {
+        sInstance.start(NanoHTTPD.SOCKET_READ_TIMEOUT, true);
+      }
+      sLogger.i("The server started.");
+    } catch (Exception e) {
+      sInstance.stop();
+      sLogger.e("The server could not start. e = " + e.toString());
+    }
+  }
+
+  /**
+   * 关闭本地服务
+   */
+  public static void stopServer() {
+    if (sInstance != null) {
+      if (sInstance.isAlive()) {
+        sInstance.stop();
+        sLogger.d("The server stopped.");
+      }
+    }
+  }
+  /**
+   * 主构造函数，也用来启动http服务
+   */
+  private WebServer() {
+    super(PORT);
+    mControllers.add(new UserController());
+    mControllers.add(new SettingsController());
+    mControllers.add(new DeviceController());
+  }
+  /**
+   * 解析的主入口函数，所有请求从这里进，也从这里出
+   */
+  @Override
+  public Response serve(IHTTPSession session) {
+    Map<String, String> files = new HashMap<>();
+    Method method = session.getMethod();
+    if (Method.PUT.equals(method) || Method.POST.equals(method)) {
+      try {
+        session.parseBody(files);
+      } catch (IOException ioe) {
+        return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT,
+          "SERVER INTERNAL ERROR: IOException: " + ioe.getMessage());
+      } catch (ResponseException re) {
+        return newFixedLengthResponse(re.getStatus(), NanoHTTPD.MIME_PLAINTEXT, re.getMessage());
+      }
+    }
+
+    Map<String, String> parms = session.getParms();
+    parms.put(QUERY_STRING_PARAMETER, session.getQueryParameterString());
+    return onRequest(session.getUri(), method, session.getHeaders(), parms, files);
+  }
+
+Token 码在设备上
+2.25 熟悉定位卡片式编程代码， 新建空白项目，添加远程升级的代码（先以功能方式出现，最后引用）
+1.okhttps肯定留里面带着SSl
+2主页面配套代码留下
+3找到httpd
+4导航栏
+5
+
+
+2.26将所熟悉的代码添加空白的Demo上，接入友盟SDK
+2.27实现运行（跑通空白项目）
+
+1.更新adb  sdk 里面的win_driver 里面的adb_compisite证书
+线路没接上，不尝试在线，直接Log，厂家技术进行沟通（深圳厂家，桌面应用，我们桌面应用烧写映像搞定，在线调试怎么做？？？？）刘工，王工，商务jessie严总
+
+
+
+2.关注核心任务
+1）了解机顶盒源码，（了解有用代码，遗留代码）
+2）熟悉httpd（了解接口文档中）
+卡片式，空白远程升级
+清楚代码做的改动
+
+整理代码，明白这些文件的代码的意义，项目代码结构
