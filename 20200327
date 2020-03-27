@@ -1,0 +1,4 @@
+notepad++上使用markdown
+1.下载notepad++ 专用插件 使用ViewMarkDown.dll放入plugins文件夹 
+2.下载高亮文件包 导入语言
+3，舍弃1，2，直接在插件部分下载有关markdown插件一共就两个，然后更新就可以使用了
