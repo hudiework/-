@@ -1,0 +1,8 @@
+如果遇到windows安装 之后许可证即将过期怎么办？
+
+选择cmd 管理员
+slmgr /ipk VK7JG-NPHTM-C97JM-9MPGT-3V66T
+slmgr /skms kms.xspace.in
+slmgr /ato
+过一会看看有没有激活
+没激活的话找个下载工具 直接激活即可
