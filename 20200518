@@ -1,0 +1,23 @@
+    google()
+    mavenCentral()
+    jcenter()
+    这个顺序建议不要颠倒
+
+配置AndroidStudio 3.6.3新生成版本
+配置镜子
+
+Androidx
+这个是在gradle.propertis
+android.useAndroidX=true
+android.enableJetifier=true
+
+配置proxy
+东华代理
+gradle.properties全局
+#systemProp.https.proxyPort=80
+systemProp.http.proxyHost=mirrors.neusoft.edu.cn
+#systemProp.https.proxyHost=mirrors.neusoft.edu.cn
+systemProp.http.proxyPort=80
+https不识别的
+
+升级androidStudio会出现这个问题
