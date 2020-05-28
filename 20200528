@@ -1,0 +1,5 @@
+记一次错误
+implementation fileTree(include: ['*.jar'], dir: 'libs')
+这句话意味着当前导入的只有当前项目使用
+compile fileTree(include: ['*.jar'], dir: 'libs')
+改成api也可以使用
